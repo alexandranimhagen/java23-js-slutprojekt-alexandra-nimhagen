@@ -1,10 +1,9 @@
-const API_KEY = 'e6e042fdd410c00b3915bad7d56d4d24';
+const API_KEY = '1cf50e6248dc270629e802686245c2c8';
 const BASE_URL = 'https://api.themoviedb.org/3';
 const API_URL = `${BASE_URL}/discover/movie?sort_by=popularity.desc&api_key=${API_KEY}`;
 const IMG_URL = 'https://image.tmdb.org/t/p/w500';
 const searchURL = `${BASE_URL}/search/movie?api_key=${API_KEY}`;
 const actorSearchURL = `${BASE_URL}/search/person?api_key=${API_KEY}`;
-
 
 let currentPage = 1;
 const resultsPerPage = 24;
@@ -12,7 +11,6 @@ let totalResults = 0;
 let currentResults = [];
 let currentSearchQuery = ''; 
 
-// Lista med genrer
 const genres = [
     {"id": 28, "name": "Action"}, 
     {"id": 12, "name": "Adventure"},
@@ -48,7 +46,6 @@ function handleError(error, userCanRetry) {
     }
 }
 
-// Rensar felmeddelanden
 function clearErrorMessage() {
     const errorMessage = document.getElementById('error-message');
     if (errorMessage) {
@@ -56,31 +53,24 @@ function clearErrorMessage() {
         errorMessage.innerText = ''; 
     }
 }
-
-// Markerar val
 function highlightSelection() {
 
 }
 
-// Laddar hemsidan och funktioner
 document.addEventListener('DOMContentLoaded', function() {
-    // Hantera klick på hemlänken
+
     const homeLink = document.getElementById('home-link');
     if (homeLink) {
         homeLink.addEventListener('click', function(event) {
             event.preventDefault(); 
+
             location.reload();
         });
     }
 
-    // Visar topprankade filmer
     getTopRatedMovies();
-
-    // Visar populära filmer
     getPopularMovies();
-
     attachSearchEventListeners();
-
     setGenre();
 
     let header = document.getElementById('search-results-header');
@@ -102,7 +92,7 @@ function attachSearchEventListeners() {
         loadMoreButton.addEventListener('click', loadMoreResults);
     }
 }
-
+    
 function handleFormSubmit(event) {
     event.preventDefault();
     const searchTerm = document.getElementById('search-input').value.trim();
@@ -110,18 +100,23 @@ function handleFormSubmit(event) {
     const isActorsChecked = document.getElementById('search-actors-checkbox').checked;
 
     if (!searchTerm) {
-        return; 
+        console.log('Ingen sökterm angiven');  // Loggning för debugging
+        return;  // Avbryt funktionen om inget sökterm finns
     }
 
     currentSearchQuery = searchTerm;
+    console.log('Sökterm:', searchTerm);  // Kontrollera vad som sätts som sökterm
 
     if (isMoviesChecked) {
+        console.log('Söker efter filmer');
         searchMovies(searchTerm);
     }
     if (isActorsChecked) {
+        console.log('Söker efter skådespelare');
         searchActors(searchTerm);
     }
 }
+
 
 function setGenre() {
     const tagsEl = document.getElementById('tags');
@@ -132,8 +127,6 @@ function setGenre() {
         t.id = genre.id;
         t.innerText = genre.name;
         t.addEventListener('click', () => {
-            const genreName = genre.name; 
-            showGenreHeader(genreName); 
             if (selectedGenre.includes(genre.id)) {
                 selectedGenre = selectedGenre.filter(id => id !== genre.id);
             } else {
@@ -145,11 +138,9 @@ function setGenre() {
         tagsEl.appendChild(t);
     });
 }
-showGenreHeader(""); 
 
-// Filmer baserat på valda genrer
 function getMoviesByGenre(genres) {
-    selectedGenre = [];
+    selectedGenre = []; // Nollställ arrayen innan du lägger till det nya genre-ID:t
     const genreQuery = genres.join(',');
     const url = `${API_URL}&with_genres=${encodeURIComponent(genreQuery)}`;
     fetch(url)
@@ -165,20 +156,14 @@ function getMoviesByGenre(genres) {
             } else {
                 currentResults = data.results;
                 displayCurrentPageResults();
+                const selectedGenreNames = genres.map(genreId => (genres.find(genre => genre.id === genreId) || {}).name);
+                const genreName = selectedGenreNames.join(', ');
+                showGenreHeader(genreName); 
             }
         })
         .catch(error => {
             handleError(error, false); 
         });
-}
-
-// Rubrik för vald genre
-function showGenreHeader(genreName) {
-    const searchResultsHeader = document.getElementById('search-results-header');
-    if (searchResultsHeader) {
-        searchResultsHeader.style.display = 'block'; 
-        searchResultsHeader.innerHTML = `<h2>${genreName} Movies</h2>`; 
-    }
 }
 
 function displayCurrentPageResults() {
@@ -191,81 +176,6 @@ function displayCurrentPageResults() {
 
     const resultsToDisplay = currentResults.slice(start, end);
 
-    var container = document.getElementById('search-results-container'); 
-    if (!container) {
-        console.error("Container element 'search-results-container' not found.");
-        return;
-    }
-    
-    container.innerHTML = ''; 
-
-    resultsToDisplay.forEach(result => {
-        const resultElement = document.createElement('div');
-        resultElement.className = 'search-result';
-        
-        if (result.poster_path) {
-            resultElement.innerHTML = `
-                <img src="${IMG_URL + result.poster_path}" alt="${result.title}">
-                <div>
-                    <h3>${result.title}</h3>
-                    <p>Release date: ${result.release_date}</p>
-                    <p>${result.overview}</p> <!-- Beskrivning för filmen -->
-                    <a href="#" class="more-info-link" data-movie-id="${result.id}">Show more info</a>
-                </div>
-            `;
-        } else if (result.profile_path) {
-            let knownForContent = '';
-            result.known_for.forEach(item => {
-                const mediaType = item.media_type === 'movie' ? 'Movie' : 'TV';
-                knownForContent += `<li>${mediaType}: ${item.title || item.name}</li>`;
-            });
-    
-            resultElement.innerHTML = `
-                <img src="${IMG_URL + result.profile_path}" alt="${result.name}" title="${result.name}">
-                <div>
-                    <h3>${result.name}</h3>
-                    <p>Known for: ${result.known_for_department}</p>
-                    <ul class="known-for-list">${knownForContent}</ul>
-                    <a href="#" class="more-info-link" data-actor-id="${result.id}">Show more info</a>
-                </div>
-            `;
-        }
-        
-        container.appendChild(resultElement);
-    });
-
-    container.querySelectorAll('.more-info-link').forEach(link => {
-        link.addEventListener('click', function(event) {
-            event.preventDefault();
-            const movieId = this.getAttribute('data-movie-id');
-            const actorId = this.getAttribute('data-actor-id');
-            if (movieId) {
-                showMoreInfo(movieId);
-            } else if (actorId) {
-                showMoreInfo(actorId);
-            }
-        });
-    });
-
-    const loadMoreButton = document.getElementById('load-more-button');
-    if (loadMoreButton) {
-        loadMoreButton.style.display = end < currentResults.length ? 'block' : 'none';
-    }
-}
-
-function loadMoreResults() {
-    currentPage++;
-    displayCurrentPageResults();
-}
-
-// Visar mer information om film/skådespelare på webbplatsen
-function showMoreInfo(movieId) {
-    const tmdbUrl = `https://www.themoviedb.org/movie/${movieId}`;
-    window.open(tmdbUrl, '_blank');
-}
-
-// Visar sökresultat för filmer eller skådespelare
-function displaySearchResults(results, type) {
     const container = document.getElementById('search-results-container');
     if (!container) {
         console.error("Container element 'search-results-container' not found.");
@@ -274,10 +184,10 @@ function displaySearchResults(results, type) {
 
     container.innerHTML = ''; 
 
-    results.forEach(result => {
+    resultsToDisplay.forEach(result => {
         const resultElement = document.createElement('div');
         resultElement.className = 'search-result';
-        if (type === 'movie') {
+        if (result.poster_path) {
             resultElement.innerHTML = `
                 <img src="${IMG_URL + result.poster_path}" alt="${result.title}">
                 <div>
@@ -286,6 +196,60 @@ function displaySearchResults(results, type) {
                     <p>${result.overview}</p> <!-- Beskrivning för filmen -->
                 </div>
             `;
+        } else if (result.profile_path) {
+            let knownForContent = '';
+            result.known_for.forEach(item => {
+                const mediaType = item.media_type === 'movie' ? 'Movie' : 'TV';
+                knownForContent += `<li>${mediaType}: ${item.title || item.name}</li>`;
+            });
+
+            resultElement.innerHTML = `
+                <img src="${IMG_URL + result.profile_path}" alt="${result.name}" title="${result.name}">
+                <div>
+                    <h3>${result.name}</h3>
+                    <p>Known for: ${result.known_for_department}</p>
+                    <ul class="known-for-list">${knownForContent}</ul>
+                </div>
+            `;
+        }
+        container.appendChild(resultElement);
+    });
+
+    const loadMoreButton = document.getElementById('load-more-button');
+    if (loadMoreButton) {
+        loadMoreButton.style.display = end < currentResults.length ? 'block' : 'none';
+    }
+}
+
+function showGenreHeader(genreName) {
+    const searchResultsHeader = document.getElementById('search-results-header');
+    if (searchResultsHeader) {
+        searchResultsHeader.style.display = 'block'; 
+        searchResultsHeader.innerHTML = `<h2>${genreName} Movies</h2>`; 
+    }
+}
+
+function loadMoreResults() {
+    currentPage++;
+    displayCurrentPageResults();
+}
+
+function displaySearchResults(results, type) {
+    const container = document.getElementById('search-results-container');
+    if (!container) {
+        console.error("Container element 'search-results-container' not found.");
+        return;
+    }
+
+    container.innerHTML = '';  // Rensa tidigare resultat
+
+    results.forEach(result => {
+        const resultElement = document.createElement('div');
+        resultElement.className = 'search-result';
+        if (type === 'movie') {
+            resultElement.innerHTML = `<img src="${IMG_URL + result.poster_path}" alt="${result.title}">
+                                       <h3>${result.title}</h3>
+                                       <p>Release date: ${result.release_date}</p>`;
         } else {
             let knownForContent = '';
             result.known_for.forEach(item => {
@@ -295,11 +259,9 @@ function displaySearchResults(results, type) {
 
             resultElement.innerHTML = `
                 <img src="${IMG_URL + result.profile_path}" alt="${result.name}" title="${result.name}">
-                <div>
-                    <h3>${result.name}</h3>
-                    <p>Known for: ${result.known_for_department}</p>
-                    <ul class="known-for-list">${knownForContent}</ul>
-                </div>
+                <h3>${result.name}</h3>
+                <p>Known for: ${result.known_for_department}</p>
+                <ul class="known-for-list">${knownForContent}</ul>
             `;
         }
         container.appendChild(resultElement);
@@ -311,10 +273,9 @@ function displaySearchResults(results, type) {
     }
 }
 
-// Söker efter filmer baserat på inmatning
 function searchMovies(query) {
     const url = `${searchURL}&query=${encodeURIComponent(query)}`;
-    console.log('API-anrop till:', url);  
+    console.log('API-anrop till:', url);  // Logga URL för att kontrollera den
     fetch(url)
         .then(response => {
             if (!response.ok) throw new Error('Nätverksfel vid hämtning av filmer');
@@ -335,10 +296,9 @@ function searchMovies(query) {
         });
 }
 
-// Söker efter skådespelare baserat på inmatning
 function searchActors(query) {
     const url = `${actorSearchURL}&query=${encodeURIComponent(query)}`;
-    console.log('API-anrop till:', url);  
+    console.log('API-anrop till:', url);  // Logga URL för att kontrollera den
     fetch(url)
         .then(response => {
             if (!response.ok) throw new Error('Nätverksfel vid hämtning av skådespelare');
@@ -359,55 +319,41 @@ function searchActors(query) {
         });
 }
 
-// Visar filmer
 function displayMovies(movies, containerId) {
     const container = document.getElementById(containerId);
     container.innerHTML = '';  
 
-    movies.slice(0, 12).forEach(movie => { // Ändra här till 12 istället för 10
+    movies.slice(0, 10).forEach(movie => {
         const movieElement = document.createElement('div');
         movieElement.className = 'movie';
         movieElement.innerHTML = `
             <img src="${IMG_URL + movie.poster_path}" alt="${movie.title}">
-            <div class="movie-info">
-                <h3>${movie.title}</h3>
-                <p>Release date: ${movie.release_date}</p>
-            </div>
-            <div class="overview">
-                <a href="#" class="show-more-info" data-movie-id="${movie.id}">Show More Info</a>
-            </div>
+            <h3>${movie.title}</h3>
+            <p>Release date: ${movie.release_date}</p>
         `;
         container.appendChild(movieElement);
     });
-
-    container.querySelectorAll('.show-more-info').forEach(link => {
-        link.addEventListener('click', event => {
-            event.preventDefault();
-            const movieId = event.target.dataset.movieId;
-            showMoreInfo(movieId);
-        });
-    });
 }
 
-// Hämtar topprankade filmer
 function getTopRatedMovies() {
     const url = `${BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=en-US&page=1`;
     fetch(url)
         .then(response => response.json())
         .then(data => {
-            const topTenMovies = data.results.slice(0, 12);
+
+            const topTenMovies = data.results.slice(0, 10);
             displayMovies(topTenMovies, 'top-rated-movies');
         })
         .catch(error => console.error('Error fetching top rated movies:', error));
 }
 
-// Hämtar populära filmer
 function getPopularMovies() {
     const url = `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=en-US&page=1`;
     fetch(url)
         .then(response => response.json())
         .then(data => {
-            const topTenMovies = data.results.slice(0, 12);
+
+            const topTenMovies = data.results.slice(0, 10);
             displayMovies(topTenMovies, 'popular-movies');
         })
         .catch(error => console.error('Error fetching popular movies:', error));
