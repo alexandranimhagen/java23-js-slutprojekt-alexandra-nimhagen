@@ -1,4 +1,4 @@
-const API_KEY = '1cf50e6248dc270629e802686245c2c8';
+const API_KEY = 'e6e042fdd410c00b3915bad7d56d4d24';
 const BASE_URL = 'https://api.themoviedb.org/3';
 const API_URL = `${BASE_URL}/discover/movie?sort_by=popularity.desc&api_key=${API_KEY}`;
 const IMG_URL = 'https://image.tmdb.org/t/p/w500';
@@ -100,12 +100,12 @@ function handleFormSubmit(event) {
     const isActorsChecked = document.getElementById('search-actors-checkbox').checked;
 
     if (!searchTerm) {
-        console.log('Ingen sökterm angiven');  // Loggning för debugging
-        return;  // Avbryt funktionen om inget sökterm finns
+        console.log('Ingen sökterm angiven'); 
+        return; 
     }
 
     currentSearchQuery = searchTerm;
-    console.log('Sökterm:', searchTerm);  // Kontrollera vad som sätts som sökterm
+    console.log('Sökterm:', searchTerm);  
 
     if (isMoviesChecked) {
         console.log('Söker efter filmer');
@@ -117,7 +117,6 @@ function handleFormSubmit(event) {
     }
 }
 
-
 function setGenre() {
     const tagsEl = document.getElementById('tags');
     tagsEl.innerHTML = '';
@@ -127,6 +126,8 @@ function setGenre() {
         t.id = genre.id;
         t.innerText = genre.name;
         t.addEventListener('click', () => {
+            const genreName = genre.name; 
+            showGenreHeader(genreName); 
             if (selectedGenre.includes(genre.id)) {
                 selectedGenre = selectedGenre.filter(id => id !== genre.id);
             } else {
@@ -138,9 +139,10 @@ function setGenre() {
         tagsEl.appendChild(t);
     });
 }
+showGenreHeader(""); 
 
 function getMoviesByGenre(genres) {
-    selectedGenre = []; // Nollställ arrayen innan du lägger till det nya genre-ID:t
+    selectedGenre = [];
     const genreQuery = genres.join(',');
     const url = `${API_URL}&with_genres=${encodeURIComponent(genreQuery)}`;
     fetch(url)
@@ -156,14 +158,19 @@ function getMoviesByGenre(genres) {
             } else {
                 currentResults = data.results;
                 displayCurrentPageResults();
-                const selectedGenreNames = genres.map(genreId => (genres.find(genre => genre.id === genreId) || {}).name);
-                const genreName = selectedGenreNames.join(', ');
-                showGenreHeader(genreName); 
             }
         })
         .catch(error => {
             handleError(error, false); 
         });
+}
+
+function showGenreHeader(genreName) {
+    const searchResultsHeader = document.getElementById('search-results-header');
+    if (searchResultsHeader) {
+        searchResultsHeader.style.display = 'block'; 
+        searchResultsHeader.innerHTML = `<h2>${genreName} Movies</h2>`; 
+    }
 }
 
 function displayCurrentPageResults() {
@@ -176,6 +183,80 @@ function displayCurrentPageResults() {
 
     const resultsToDisplay = currentResults.slice(start, end);
 
+    var container = document.getElementById('search-results-container'); 
+    if (!container) {
+        console.error("Container element 'search-results-container' not found.");
+        return;
+    }
+    
+    container.innerHTML = ''; 
+
+    resultsToDisplay.forEach(result => {
+        const resultElement = document.createElement('div');
+        resultElement.className = 'search-result';
+        
+        if (result.poster_path) {
+            resultElement.innerHTML = `
+                <img src="${IMG_URL + result.poster_path}" alt="${result.title}">
+                <div>
+                    <h3>${result.title}</h3>
+                    <p>Release date: ${result.release_date}</p>
+                    <p>${result.overview}</p> <!-- Beskrivning för filmen -->
+                    <a href="#" class="more-info-link" data-movie-id="${result.id}">Show more info</a>
+                </div>
+            `;
+        } else if (result.profile_path) {
+            let knownForContent = '';
+            result.known_for.forEach(item => {
+                const mediaType = item.media_type === 'movie' ? 'Movie' : 'TV';
+                knownForContent += `<li>${mediaType}: ${item.title || item.name}</li>`;
+            });
+    
+            resultElement.innerHTML = `
+                <img src="${IMG_URL + result.profile_path}" alt="${result.name}" title="${result.name}">
+                <div>
+                    <h3>${result.name}</h3>
+                    <p>Known for: ${result.known_for_department}</p>
+                    <ul class="known-for-list">${knownForContent}</ul>
+                    <a href="#" class="more-info-link" data-actor-id="${result.id}">Show more info</a>
+                </div>
+            `;
+        }
+        
+        container.appendChild(resultElement);
+    });
+
+    container.querySelectorAll('.more-info-link').forEach(link => {
+        link.addEventListener('click', function(event) {
+            event.preventDefault();
+            const movieId = this.getAttribute('data-movie-id');
+            const actorId = this.getAttribute('data-actor-id');
+            if (movieId) {
+                showMoreInfo(movieId);
+            } else if (actorId) {
+                showMoreInfo(actorId);
+            }
+        });
+    });
+
+    const loadMoreButton = document.getElementById('load-more-button');
+    if (loadMoreButton) {
+        loadMoreButton.style.display = end < currentResults.length ? 'block' : 'none';
+    }
+}
+
+function loadMoreResults() {
+    currentPage++;
+    displayCurrentPageResults();
+}
+
+
+function showMoreInfo(movieId) {
+    const tmdbUrl = `https://www.themoviedb.org/movie/${movieId}`;
+    window.open(tmdbUrl, '_blank');
+}
+
+function displaySearchResults(results, type) {
     const container = document.getElementById('search-results-container');
     if (!container) {
         console.error("Container element 'search-results-container' not found.");
@@ -184,10 +265,10 @@ function displayCurrentPageResults() {
 
     container.innerHTML = ''; 
 
-    resultsToDisplay.forEach(result => {
+    results.forEach(result => {
         const resultElement = document.createElement('div');
         resultElement.className = 'search-result';
-        if (result.poster_path) {
+        if (type === 'movie') {
             resultElement.innerHTML = `
                 <img src="${IMG_URL + result.poster_path}" alt="${result.title}">
                 <div>
@@ -196,7 +277,7 @@ function displayCurrentPageResults() {
                     <p>${result.overview}</p> <!-- Beskrivning för filmen -->
                 </div>
             `;
-        } else if (result.profile_path) {
+        } else {
             let knownForContent = '';
             result.known_for.forEach(item => {
                 const mediaType = item.media_type === 'movie' ? 'Movie' : 'TV';
@@ -217,65 +298,12 @@ function displayCurrentPageResults() {
 
     const loadMoreButton = document.getElementById('load-more-button');
     if (loadMoreButton) {
-        loadMoreButton.style.display = end < currentResults.length ? 'block' : 'none';
-    }
-}
-
-function showGenreHeader(genreName) {
-    const searchResultsHeader = document.getElementById('search-results-header');
-    if (searchResultsHeader) {
-        searchResultsHeader.style.display = 'block'; 
-        searchResultsHeader.innerHTML = `<h2>${genreName} Movies</h2>`; 
-    }
-}
-
-function loadMoreResults() {
-    currentPage++;
-    displayCurrentPageResults();
-}
-
-function displaySearchResults(results, type) {
-    const container = document.getElementById('search-results-container');
-    if (!container) {
-        console.error("Container element 'search-results-container' not found.");
-        return;
-    }
-
-    container.innerHTML = '';  // Rensa tidigare resultat
-
-    results.forEach(result => {
-        const resultElement = document.createElement('div');
-        resultElement.className = 'search-result';
-        if (type === 'movie') {
-            resultElement.innerHTML = `<img src="${IMG_URL + result.poster_path}" alt="${result.title}">
-                                       <h3>${result.title}</h3>
-                                       <p>Release date: ${result.release_date}</p>`;
-        } else {
-            let knownForContent = '';
-            result.known_for.forEach(item => {
-                const mediaType = item.media_type === 'movie' ? 'Movie' : 'TV';
-                knownForContent += `<li>${mediaType}: ${item.title || item.name}</li>`;
-            });
-
-            resultElement.innerHTML = `
-                <img src="${IMG_URL + result.profile_path}" alt="${result.name}" title="${result.name}">
-                <h3>${result.name}</h3>
-                <p>Known for: ${result.known_for_department}</p>
-                <ul class="known-for-list">${knownForContent}</ul>
-            `;
-        }
-        container.appendChild(resultElement);
-    });
-
-    const loadMoreButton = document.getElementById('load-more-button');
-    if (loadMoreButton) {
         loadMoreButton.style.display = results.length < totalResults ? 'block' : 'none';
     }
 }
-
 function searchMovies(query) {
     const url = `${searchURL}&query=${encodeURIComponent(query)}`;
-    console.log('API-anrop till:', url);  // Logga URL för att kontrollera den
+    console.log('API-anrop till:', url);  
     fetch(url)
         .then(response => {
             if (!response.ok) throw new Error('Nätverksfel vid hämtning av filmer');
@@ -298,7 +326,7 @@ function searchMovies(query) {
 
 function searchActors(query) {
     const url = `${actorSearchURL}&query=${encodeURIComponent(query)}`;
-    console.log('API-anrop till:', url);  // Logga URL för att kontrollera den
+    console.log('API-anrop till:', url);  
     fetch(url)
         .then(response => {
             if (!response.ok) throw new Error('Nätverksfel vid hämtning av skådespelare');
@@ -328,10 +356,23 @@ function displayMovies(movies, containerId) {
         movieElement.className = 'movie';
         movieElement.innerHTML = `
             <img src="${IMG_URL + movie.poster_path}" alt="${movie.title}">
-            <h3>${movie.title}</h3>
-            <p>Release date: ${movie.release_date}</p>
+            <div class="movie-info">
+                <h3>${movie.title}</h3>
+                <p>Release date: ${movie.release_date}</p>
+            </div>
+            <div class="overview">
+                <a href="#" class="show-more-info" data-movie-id="${movie.id}">Show More Info</a>
+            </div>
         `;
         container.appendChild(movieElement);
+    });
+
+    container.querySelectorAll('.show-more-info').forEach(link => {
+        link.addEventListener('click', event => {
+            event.preventDefault();
+            const movieId = event.target.dataset.movieId;
+            showMoreInfo(movieId);
+        });
     });
 }
 
