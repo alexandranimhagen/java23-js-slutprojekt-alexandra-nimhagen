@@ -21,31 +21,27 @@
     </ul>
 </nav>
 
-<!-- Sökfunktion för filmer -->
+
+<section id="genre-selection">
+    <div id="tags" class="tags">
+    </div>
+</section>
+
 <section id="search">
     <form id="search-form"> 
-        <input type="search" id="search-input" placeholder="Search movies or actor..." aria-label="Search movies or actors"> 
-        <button type="submit">Search</button> 
+        <input type="search" id="search-input" placeholder="Search for movies or actors..." aria-label="Search movies or actors"> 
         <label>
             <input type="checkbox" id="search-movies-checkbox" value="movies"> Movies
         </label> 
         <label>
             <input type="checkbox" id="search-actors-checkbox" value="actors"> Actors
         </label> 
-
+        <button type="submit">Search</button> 
     </form>
 </section>
 
-<!-- Filmgenrer -->
-<section id="genre-selection">
-    <div id="tags" class="tags">
-    </div>
-</section>
-
-<!-- Felmeddelanden -->
 <div id="error-message" style="display: none; color: red;"></div>
 
-<!-- Sektion för att visa sökresultat -->
 <section id="search-results">
     <div id="search-results-header" style="display: none;">
         <h2>Search Results</h2>
@@ -54,21 +50,16 @@
     </div>
 </section>
 
-<!-- Högst rankade filmer -->
 <section id="top-rated" class="section">
-    <h2>Top Ranked Movies</h2>
-    <!-- Topprankade filmer -->
+    <h2>Top Rated Movies</h2>
     <div id="top-rated-movies" class="movie-container"></div>
 </section>
 
-<!-- Visar populära filmer -->
 <section id="popular" class="section">
-    <h2>Popular filmer</h2>
-    <!-- Visar populära filmer -->
+    <h2>Popular Movies</h2>
     <div id="popular-movies" class="movie-container"></div>
 </section>
 
-<!-- Länkar till JavaScript-fil -->
 <script src="script.js" type="module"></script> 
 </body>
 </html>
